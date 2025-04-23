@@ -1,0 +1,116 @@
+session: "CIFARImageClassification"
+seed: 42
+max_epochs: 30
+checkpoints_path: "./checkpoints/CIFARImageClassification"
+
+datasets:
+  [
+    {
+      name: "CIFAR10",
+      mode: "train",
+      task: "classification",
+      dataset_path: "../Datasets/CIFAR10/",
+      transforms: [
+        { name: "Resize", size: [ 32, 32 ] },
+        { name: "RandomChoice", p: null, transforms: [
+          { name: "RandomHorizontalFlip", p: 1 },
+          { name: "RandomVerticalFlip", p: 1 },
+          { name: "RandomRotation", degrees: [ 0, 360 ] },
+        ]},
+
+        { name: "RandomChoice", p: null, transforms: [
+          { name: "Grayscale", num_output_channels: 3 },
+#          { name: "ColorJitter", brightness: 0.5, hue: 0.3 },
+#          { name: "GaussianBlur", kernel_size: [ 5, 9 ], sigma: [ 0.1, 5.0 ] },
+          { name: "RandomInvert", p: 1 },
+#          { name: "RandomPosterize", bits: 2, p: 1 },
+#          { name: "RandomSolarize", threshold: 100.0, p: 1 },
+#          { name: "RandomAdjustSharpness", sharpness_factor: 2, p: 1 },
+#          { name: "RandomAutocontrast", p: 1 },
+#          { name: "RandomEqualize", p: 1 },
+#          { name: "JPEG", quality: [ 5, 50 ] },
+        ]},
+
+        { name: "ToImage" },
+        { name: "ToDtype", dtype: { image: "float32", label: "long" }, scale: True },
+#        { name: "Normalize", mean: [ 0.485, 0.456, 0.406 ], std: [ 0.229, 0.224, 0.225 ] },
+      ]
+    }, {
+      name: "CIFAR10",
+      mode: "validation",
+      task: "classification",
+      dataset_path: "../Datasets/CIFAR10/",
+      transforms: [
+        { name: "Resize", size: [ 32, 32 ] },
+        { name: "ToImage" },
+        { name: "ToDtype", dtype: { image: "float32", label: "long" }, scale: True },
+#        { name: "Normalize", mean: [ 0.485, 0.456, 0.406 ], std: [ 0.229, 0.224, 0.225 ] },
+      ]
+    },  {
+      name: "CIFAR10",
+      mode: "test",
+      task: "classification",
+      dataset_path: "../Datasets/CIFAR10/",
+      transforms: [
+        { name: "Resize", size: [ 32, 32 ] },
+        { name: "ToImage" },
+        { name: "ToDtype", dtype: { image: "float32", label: "long" }, scale: True },
+#        { name: "Normalize", mean: [ 0.485, 0.456, 0.406 ], std: [ 0.229, 0.224, 0.225 ] },
+      ]
+    }
+  ]
+
+dataloaders:
+  train:
+    batch_size: 16
+    shuffle: True
+    num_workers: 8
+    pin_memory: False
+    drop_last: True
+
+  validation:
+    batch_size: 16
+    shuffle: False
+    num_workers: 8
+    pin_memory: False
+    drop_last: False
+
+  test:
+    batch_size: 16
+    shuffle: False
+    num_workers: 8
+    pin_memory: False
+    drop_last: False
+
+model:
+  name: "CustomModel"
+  num_classes: 10
+
+optimizer:
+  name: "SGD"
+  lr: 0.01
+  momentum: 0.9
+  dampening: 0
+  weight_decay: 0
+  nesterov: False
+  maximize: False
+  foreach: null  # None
+  differentiable: False
+  fused: null  # None
+
+scheduler:
+  name: "StepLR"
+  step_size: 1
+  gamma: 0.95
+  last_epoch: -1
+
+evaluator:
+  name: "ConfusionMatrixEvaluator"
+  num_classes: 10
+  threshold: 0.5
+
+criterion:
+  name: "BCEWithLogitsLoss"
+
+logger:
+  name: "Tensorboard"
