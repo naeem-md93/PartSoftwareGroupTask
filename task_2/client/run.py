@@ -85,12 +85,6 @@ def get_dataset_pairs(dataset):
     else:
         pairs = load_lfw_pairs(*DATASET_PATHS[dataset])
 
-    print(dataset)
-    stats = {}
-    for (img1, img2, lbl) in pairs:
-        stats[lbl] = stats.get(lbl, 0) + 1
-    print(stats)
-
     return pairs
 
 
@@ -131,22 +125,68 @@ def get_similarities(url, pairs, model):
     return result
 
 
+def calculate_metrics(file_path: str, threshold: float) -> None:
+
+    with open(file_path, "r") as f:
+        data = json.load(f)
+
+    labels = np.array([x["label"] for x in data])
+    labels = (labels != 0).astype(int)
+
+    sims = np.array([x["sim"] for x in data])
+    preds = (sims >= threshold).astype(int)
+
+    cm = np.zeros((2, 2))
+    for i in range(len(labels)):
+        cm[labels[i], preds[i]] += 1
+
+    TN, FN, FP, TP = cm[0, 0], cm[0, 1], cm[1, 0], cm[1, 1]
+
+    accuracy = (TP + TN) / cm.sum()
+    fmr = FP / (FP + TN)
+    fnmr = FN / (FN + TP)
+
+    metrics = {
+        "cm": cm,
+        "TN": TN,
+        "FN": FN,
+        "FP": FP,
+        "TP": TP,
+        "accuracy": accuracy,
+        "fmr": fmr,
+        "fnmr": fnmr,
+    }
+
+    return metrics
+
+
+
 def evaluate(url, dataset, model, threshold):
 
+    save_path = f"{dataset}_{model}.json"
+
     pairs = get_dataset_pairs(dataset)
-    # result = get_similarities(url, pairs, model)
-    #
-    # with open(f"{dataset}_{model}.json", "w") as f:
-    #     json.dump(result, f)
-    #
-    # return result
+    print(dataset)
+    stats = {}
+    for (img1, img2, lbl) in pairs:
+        stats[lbl] = stats.get(lbl, 0) + 1
+    print(stats)
+
+
+    result = get_similarities(url, pairs, model)
+
+    with open(f"{dataset}_{model}.json", "w") as f:
+        json.dump(result, f)
+
+    metrics = calculate_metrics(save_path, threshold)
+    print(f"{dataset} - {model} - {metrics['TP']} - {metrics['FP']} - {metrics['FN']} - {metrics['TN']} - {metrics['accuracy']:0.4f} - {metrics['fmr']:0.4f} - {metrics['fnmr']:0.4f}")
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument("-datasets", type=str, nargs="+", choices=("CA-LFW", "CP-LFW", "LFW"))
     parser.add_argument("-models", type=str, nargs="+", choices=("buffalo_l", "buffalo_s"))
-    parser.add_argument("-threshold", type=float, default=0.36)
+    parser.add_argument("-threshold", type=float, default=0.22)
     args = parser.parse_args()
     print(args)
 
