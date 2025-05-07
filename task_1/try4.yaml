@@ -1,0 +1,126 @@
+session: "Try4_"
+seed: null
+max_epochs: 20
+checkpoints_path: "./checkpoints/"
+class_labels:
+  - "airplane"
+  - "automobile"
+  - "bird"
+  - "cat"
+  - "deer"
+  - "dog"
+  - "frog"
+  - "horse"
+  - "ship"
+  - "truck"
+
+visualizer_target_layers:
+  - "fc"
+
+datasets:
+  [
+    {
+      name: "CIFAR10",
+      mode: "train",
+      task: "classification",
+      dataset_path: "./Datasets/CIFAR10/",
+      transforms: [
+        { name: "RandomHorizontalFlip", p: 1.0 },
+
+        { name: "RandomChoice", p: null, transforms: [
+          { name: "RandomHorizontalFlip", p: 0 },  # Skip geometric transformations
+          { name: "RandomPerspective", distortion_scale: 0.4, p: 1.0 },
+          { name: "RandomAffine", degrees: [-30, 30], translate: [0.1, 0.3], scale: [0.75, 1.0] }
+        ]},
+
+        { name: "RandomChoice", p: null, transforms: [
+          { name: "RandomInvert", p: 0 },  # Skip photometric transformations
+          { name: "ColorJitter", brightness: 0.5, hue: 0.3 },
+          { name: "Grayscale", num_output_channels: 3 },
+          { name: "RandomInvert", p: 1 },
+          { name: "RandomPosterize", bits: 3, p: 1 },
+          { name: "RandomSolarize", threshold: 200.0, p: 1 },
+          { name: "RandomAdjustSharpness", sharpness_factor: 2, p: 1 },
+          { name: "JPEG", quality: [50, 80] }
+        ]},
+
+        { name: "ToImage" },
+        { name: "ToDtype", dtype: { image: "float32", label: "float32" }, scale: True },
+        { name: "Normalize", mean: [ 0.49139968, 0.48215841, 0.44653091 ], std: [ 0.24703223, 0.24348513, 0.26158784 ] },
+      ]
+    }, {
+      name: "CIFAR10",
+      mode: "validation",
+      task: "classification",
+      dataset_path: "./Datasets/CIFAR10/",
+      transforms: [
+        { name: "ToImage" },
+        { name: "ToDtype", dtype: { image: "float32", label: "float32" }, scale: True },
+        { name: "Normalize", mean: [ 0.49139968, 0.48215841, 0.44653091 ], std: [ 0.24703223, 0.24348513, 0.26158784 ] },
+      ]
+    },  {
+      name: "CIFAR10",
+      mode: "test",
+      task: "classification",
+      dataset_path: "./Datasets/CIFAR10/",
+      transforms: [
+        { name: "ToImage" },
+        { name: "ToDtype", dtype: { image: "float32", label: "float32" }, scale: True },
+        { name: "Normalize", mean: [ 0.49139968, 0.48215841, 0.44653091 ], std: [ 0.24703223, 0.24348513, 0.26158784 ] },
+      ]
+    }
+  ]
+
+dataloaders:
+  train:
+    batch_size: 128
+    shuffle: True
+    num_workers: 8
+    pin_memory: False
+    drop_last: True
+
+  validation:
+    batch_size: 128
+    shuffle: False
+    num_workers: 8
+    pin_memory: False
+    drop_last: False
+
+  test:
+    batch_size: 128
+    shuffle: False
+    num_workers: 8
+    pin_memory: False
+    drop_last: False
+
+model:
+  name: "Try4Model"
+
+optimizer:
+  name: "SGD"
+  lr: 0.1
+  momentum: 0.9
+  dampening: 0
+  weight_decay: 0.0005
+  nesterov: False
+  maximize: False
+  foreach: null  # None
+  differentiable: False
+  fused: null  # None
+
+scheduler:
+  name: "ReduceLROnPlateau"
+  mode: "min"
+  factor: 0.1
+  patience: 2
+
+evaluator:
+  name: "ConfusionMatrixEvaluator"
+  num_classes: 10
+  threshold: 0.5
+
+criterion:
+  name: "CrossEntropyLoss"
+
+logger:
+  name: "Tensorboard"

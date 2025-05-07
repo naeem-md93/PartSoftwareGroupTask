@@ -1,0 +1,111 @@
+session: "Try8"
+seed: null
+max_epochs: 200
+checkpoints_path: "./checkpoints/"
+class_labels:
+  - "airplane"
+  - "automobile"
+  - "bird"
+  - "cat"
+  - "deer"
+  - "dog"
+  - "frog"
+  - "horse"
+  - "ship"
+  - "truck"
+
+visualizer_target_layers:
+  - "fc"
+
+datasets:
+  [
+    {
+      name: "CIFAR10",
+      mode: "train",
+      task: "classification",
+      dataset_path: "./Datasets/CIFAR10/",
+      transforms: [
+        { name: "RandomHorizontalFlip", p: 0.5 },
+
+        { name: "RandomChoice", p: null, transforms: [
+          { name: "RandomHorizontalFlip", p: 0 },  # Skip
+          { name: "AutoAugment", policy: "CIFAR10" },
+        ]},
+
+        { name: "ToImage" },
+        { name: "ToDtype", dtype: { image: "float32", label: "long" }, scale: True },
+        { name: "Normalize", mean: [ 0.49139968, 0.48215841, 0.44653091 ], std: [ 0.24703223, 0.24348513, 0.26158784 ] },
+      ]
+    }, {
+      name: "CIFAR10",
+      mode: "validation",
+      task: "classification",
+      dataset_path: "./Datasets/CIFAR10/",
+      transforms: [
+        { name: "ToImage" },
+        { name: "ToDtype", dtype: { image: "float32", label: "long" }, scale: True },
+        { name: "Normalize", mean: [ 0.49139968, 0.48215841, 0.44653091 ], std: [ 0.24703223, 0.24348513, 0.26158784 ] },
+      ]
+    },  {
+      name: "CIFAR10",
+      mode: "test",
+      task: "classification",
+      dataset_path: "./Datasets/CIFAR10/",
+      transforms: [
+        { name: "ToImage" },
+        { name: "ToDtype", dtype: { image: "float32", label: "long" }, scale: True },
+        { name: "Normalize", mean: [ 0.49139968, 0.48215841, 0.44653091 ], std: [ 0.24703223, 0.24348513, 0.26158784 ] },
+      ]
+    }
+  ]
+
+
+dataloaders:
+  train:
+    batch_size: 256
+    shuffle: True
+    num_workers: 8
+    pin_memory: False
+    drop_last: True
+
+  validation:
+    batch_size: 256
+    shuffle: False
+    num_workers: 8
+    pin_memory: False
+    drop_last: False
+
+  test:
+    batch_size: 256
+    shuffle: False
+    num_workers: 8
+    pin_memory: False
+    drop_last: False
+
+model:
+  name: "Try8Model"
+
+optimizer:
+  name: "SGD"
+  lr: 0.1
+  momentum: 0.9
+  weight_decay: 0.0005
+  nesterov: True
+
+scheduler:
+  name: "StepLR"
+  step_size: 50
+  gamma: 0.1
+  last_epoch: -1
+
+evaluator:
+  name: "ConfusionMatrixEvaluator"
+  num_classes: 10
+  threshold: 0.5
+
+criterion:
+  name: "CrossEntropyLoss"
+  label_smoothing: 0.1
+
+logger:
+  name: "Tensorboard"
