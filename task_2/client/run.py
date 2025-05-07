@@ -59,10 +59,15 @@ def load_caplfw_pairs(images_path: str, pair_file: str):
         image2, label2 = content[i + 1].split(" ")
         assert label1 == label2, f"{label1} != {label2}"
 
+        if int(label1) == 0:
+            label = 0
+        else:
+            label = 1
+
         d = (
             osp.join(images_path, image1),
             osp.join(images_path, image2),
-            int(label1),
+            label,
         )
 
         assert osp.exists(d[0]), f"{d[0]} does not exist"
@@ -79,6 +84,12 @@ def get_dataset_pairs(dataset):
         pairs = load_caplfw_pairs(*DATASET_PATHS[dataset])
     else:
         pairs = load_lfw_pairs(*DATASET_PATHS[dataset])
+
+    print(dataset)
+    stats = {}
+    for (img1, img2, lbl) in pairs:
+        stats[lbl] = stats.get(lbl, 0) + 1
+    print(stats)
 
     return pairs
 
@@ -123,12 +134,12 @@ def get_similarities(url, pairs, model):
 def evaluate(url, dataset, model, threshold):
 
     pairs = get_dataset_pairs(dataset)
-    result = get_similarities(url, pairs, model)
-
-    with open(f"{dataset}_{model}.json", "w") as f:
-        json.dump(result, f)
-
-    return result
+    # result = get_similarities(url, pairs, model)
+    #
+    # with open(f"{dataset}_{model}.json", "w") as f:
+    #     json.dump(result, f)
+    #
+    # return result
 
 
 if __name__ == '__main__':
